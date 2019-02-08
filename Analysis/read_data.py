@@ -33,7 +33,9 @@ df.loc[df['hour_of_day'] < hour_shift,'hour_of_day'] = df['hour_of_day'] + 24
 df = df.query('day_of_week < 4 and busy_duration_hours> 0.05 and busy_duration_hours < 5')
 
 # %%
-smaller = df[100000:]
+smaller = df[100000:] # to ignore weird stuff when it was just getting started
+
+max_gap = 1.0 # in hours, gap between a trip end and new dispatch that defines a "break"
 
 def count_trips(x):
     return np.sum(x.status == "b'DISPATCHED'")
@@ -58,7 +60,7 @@ def get_shifts(driver_day):
         start_times = driver_day.hour_of_day.values
         end_times = start_times + driver_day.busy_duration_hours.values
         gaps = start_times[1:] - end_times[:-1]
-        return np.sum(gaps > 1.5) + 1
+        return np.sum(gaps > max_gap) + 1
     else:
         return 1
     
@@ -84,7 +86,7 @@ def get_shift_details(driver_day):
                 'second_shift_start':np.nan,
                 'second_shift_end':np.nan,
                 'n_shifts':np.nan}
-        elif gap > 1.5:
+        elif gap > max_gap:
             first_shift_start = start_times[0]
             first_shift_end = end_times[gapind]
             second_shift_start = start_times[gapind+1]
